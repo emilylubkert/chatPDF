@@ -5,9 +5,11 @@ import React, { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { useMutation } from '@tanstack/react-query';
 import axios from "axios";
-import toast from "react-hot-toast/headless";
+import {useRouter} from "next/navigation";
+import { toast } from 'react-hot-toast'
 
 const FileUpload = () => {
+    const router = useRouter();
     const [uploading, setUploading] = useState(false);
     const { mutate, isLoading } = useMutation({
         mutationFn: async ({
@@ -17,6 +19,7 @@ const FileUpload = () => {
             file_name: string;
         }) => {
             const response = await axios.post('/api/create-chat', { file_key, file_name });
+            console.log('upload response', response.data);
             return response.data;
         }
     })
@@ -24,11 +27,10 @@ const FileUpload = () => {
         accept: { 'application/pdf': [".pdf"] },
         maxFiles: 1,
         onDrop: async (acceptedFiles) => {
-            console.log(acceptedFiles);
+            //console.log(acceptedFiles);
             const file = acceptedFiles[0];
             if (file.size > 10 * 1024 * 1024) {
-
-                toast.error('File too large');
+                toast.error("Please upload a smaller file");
                 return;
             }
 
@@ -36,26 +38,24 @@ const FileUpload = () => {
                 setUploading(true);
                 const data = await uploadToS3(file);
                 if (!data?.file_key || !data.file_name) {
-                    toast.error("something went wrong");
                     return;
                 }
                 mutate(data, {
-                    onSuccess: data => {
-                        console.log(data);
-                        //toast.success(data.message);
+                    onSuccess: ({chat_id}) => {
+                        toast.success("Chat created!");
+                        router.push(`/chat/${chat_id}`);
                     },
                     onError: err => {
-                        toast.error("Error creating chat");
+                        console.error(err);
+                        toast.error("Error creating toast");
                     }
                 });
-                console.log('data', data);
             } catch (error) {
                 console.log(error);
+                toast.error("Error uploading to S3");
             } finally {
                 setUploading(false);
             }
-
-
         },
     });
     return (

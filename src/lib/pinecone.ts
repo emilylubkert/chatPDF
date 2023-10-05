@@ -82,7 +82,7 @@ export const truncateStringByBytes = (str: string, bytes: number) => {
 
 async function prepareDocument(page: PDFPage) {
     let { pageContent, metadata } = page;
-    pageContent = pageContent.replace(/\n/g, ' ');
+    pageContent = pageContent.replace(/\n/g, '');
     //split docs
     const splitter = new RecursiveCharacterTextSplitter();
     const docs = await splitter.splitDocuments([
